@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = { file = "LICENSE" }
 authors = [
-  { name = "djvibe", email = "your-email@example.com" }, # Placeholder, user might want to change
+  { name = "djvibe", email = "your-email@example.com" },
 ]
 keywords = ["google-images", "image-downloader", "cli", "selenium"]
 classifiers = [
@@ -24,6 +24,8 @@ dependencies = [
     "selenium",
     "webdriver-manager",
 ]
+
+py-modules = ["downloader", "img_dl_cli"]
 
 [project.scripts]
 img-dl = "img_dl_cli:main"
