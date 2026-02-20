@@ -1,0 +1,33 @@
+[project]
+name = "img-dl-cli"
+version = "0.1.0"
+description = "A command-line tool to download high-resolution images from Google Images."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+authors = [
+  { name = "djvibe", email = "your-email@example.com" }, # Placeholder, user might want to change
+]
+keywords = ["google-images", "image-downloader", "cli", "selenium"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Topic :: Internet :: WWW/HTTP :: Browsers",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "selenium",
+    "webdriver-manager",
+]
+
+[project.scripts]
+img-dl = "img_dl_cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

@@ -32,11 +32,13 @@ A simple command-line tool to download high-resolution images from Google Images
     source venv/bin/activate  # On Windows use `venv\Scripts\activate`
     pip install -r requirements.txt
     ```
-
-3.  **Make the script executable:**
-    (This step might have already been done by git)
+    To install the tool globally:
     ```bash
-    chmod +x img-dl
+    pip install .
+    ```
+    or for a global install via PyPI (after publishing):
+    ```bash
+    pip install img-dl-cli
     ```
 
 ## Usage
@@ -44,7 +46,7 @@ A simple command-line tool to download high-resolution images from Google Images
 The primary way to use this tool is via the `img-dl` executable script.
 
 ```bash
-./img-dl <query> [options]
+img-dl <query> [options]
 ```
 
 ### Positional Arguments
@@ -67,7 +69,7 @@ The primary way to use this tool is via the `img-dl` executable script.
 Download 5 photos of "dogs". This is the default number of images.
 
 ```bash
-./img-dl "dogs"
+img-dl "dogs"
 ```
 
 **Download More Images**
@@ -75,7 +77,7 @@ Download 5 photos of "dogs". This is the default number of images.
 Download 20 photos of "landscapes":
 
 ```bash
-./img-dl "landscapes" -n 20
+img-dl "landscapes" -n 20
 ```
 
 **Specify Image Type and Size**
@@ -83,7 +85,7 @@ Download 20 photos of "landscapes":
 Download 10 clipart images of "computers" with a minimum size of 50KB:
 
 ```bash
-./img-dl "computers" -n 10 -t clipart -s 50
+img-dl "computers" -n 10 -t clipart -s 50
 ```
 
 **Custom Output Directory**
@@ -91,5 +93,5 @@ Download 10 clipart images of "computers" with a minimum size of 50KB:
 Download images to a specific folder named `~/Pictures/cat_pics`:
 
 ```bash
-./img-dl "cats" -o ~/Pictures/cat_pics
+img-dl "cats" -o ~/Pictures/cat_pics
 ```
