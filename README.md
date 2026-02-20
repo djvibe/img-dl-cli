@@ -24,21 +24,21 @@ A simple command-line tool to download high-resolution images from Google Images
     cd mcp-image-downloader
     ```
 
-2.  **Install dependencies:**
-    It's highly recommended to use a virtual environment.
+2.  **Global Installation (Recommended for CLI usage):**
+    Ensure you have `pipx` installed. If not, you can usually install it with `pip install pipx --user` (though this might vary based on your system Python configuration).
 
+    Once `pipx` is available, install `img-dl-cli` from the cloned repository:
+    ```bash
+    pipx install .
+    ```
+    This will install `img-dl-cli` into an isolated environment and make the `img-dl` command globally available.
+
+3.  **Development Installation (Optional):**
+    For developing the tool or if you prefer a virtual environment:
     ```bash
     python3 -m venv venv
     source venv/bin/activate  # On Windows use `venv\Scripts\activate`
     pip install -r requirements.txt
-    ```
-    To install the tool globally:
-    ```bash
-    pip install .
-    ```
-    or for a global install via PyPI (after publishing):
-    ```bash
-    pip install img-dl-cli
     ```
 
 ## Usage
