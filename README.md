@@ -53,11 +53,43 @@ The primary way to use this tool is via the `img-dl` executable script.
 
 ### Optional Arguments
 
-| Flag          | Alias | Description                               | Default   | Choices                                 |
-|---------------|-------|-------------------------------------------|-----------|
-| `--num`       | `-n`  | The number of images to download.         | `5`       | Any integer                             |
-| `--size`      | `-s`  | The minimum image file size in kilobytes (KB). | `180`     | Any integer                             |
-| `--type`      | `-t`  | The type of image to filter for.          | `photo`   | `all`, `photo`, `clipart`, `lineart`, `gif` |
-| `--output`    | `-o`  | The directory where images will be saved. | `images`  | Any valid path                          |
-| `--logs`      | `-l`  | The directory where log files will be stored. | `logs`    | Any valid path                          |
-| `--help`      | `-h`  | Show the help message and exit.           |           |
+*   `-n, --num`: The number of images to download. (Default: `5`)
+*   `-s, --size`: The minimum image file size in kilobytes (KB). (Default: `180`)
+*   `-t, --type`: The type of image to filter for. (Default: `photo`). Choices: `all`, `photo`, `clipart`, `lineart`, `gif`.
+*   `-o, --output`: The directory where images will be saved. (Default: `images`)
+*   `-l, --logs`: The directory where log files will be stored. (Default: `logs`)
+*   `-h, --help`: Show the help message and exit.
+
+### Examples
+
+**Basic Download**
+
+Download 5 photos of "dogs". This is the default number of images.
+
+```bash
+./img-dl "dogs"
+```
+
+**Download More Images**
+
+Download 20 photos of "landscapes":
+
+```bash
+./img-dl "landscapes" -n 20
+```
+
+**Specify Image Type and Size**
+
+Download 10 clipart images of "computers" with a minimum size of 50KB:
+
+```bash
+./img-dl "computers" -n 10 -t clipart -s 50
+```
+
+**Custom Output Directory**
+
+Download images to a specific folder named `~/Pictures/cat_pics`:
+
+```bash
+./img-dl "cats" -o ~/Pictures/cat_pics
+```
