@@ -1,14 +1,14 @@
 [project]
 name = "img-dl-cli"
-version = "0.1.0"
-description = "A command-line tool to download high-resolution images from Google Images."
+version = "0.2.0"
+description = "A resilient command-line tool for downloading high-resolution web image candidates."
 readme = "README.md"
 requires-python = ">=3.8"
 license = { file = "LICENSE" }
 authors = [
   { name = "djvibe", email = "your-email@example.com" },
 ]
-keywords = ["google-images", "image-downloader", "cli", "selenium"]
+keywords = ["google-images", "bing-images", "image-downloader", "cli", "selenium"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",

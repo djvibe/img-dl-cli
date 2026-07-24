@@ -19,7 +19,9 @@ def setup_logging(log_dir: str):
     )
 
 def main():
-    parser = argparse.ArgumentParser(description="Download high-resolution images from Google Images.")
+    parser = argparse.ArgumentParser(
+        description="Download high-resolution image candidates with Google first and Bing fallback."
+    )
     parser.add_argument("query", help="Search query for images")
     parser.add_argument("-n", "--num", type=int, default=5, help="Number of images to download (default: 5)")
     parser.add_argument("-s", "--size", type=int, default=180, help="Minimum file size in KB (default: 180)")

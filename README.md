@@ -12,9 +12,20 @@ _____ ____  ____  _____ _     _____   _  _      ____  _____ _____
 \____/\____/\_/  \|\_/  \|\____/\____/\_/ \|\____/\____\\_/\_\  (_)
 ```
 
-# img-dl: Google Image Downloader
+# img-dl: Resilient Web Image Downloader
 
-A simple command-line tool to download high-resolution images from Google Images.
+A command-line tool that tries Google Images first and automatically falls back
+to Bing Images when Google redirects the server browser to an automated-traffic
+challenge or produces no qualifying files.
+
+The command now exits non-zero when neither source produces an image above the
+requested minimum size. A zero-file run is never reported as success.
+
+Bing fallback cards must share a meaningful query term in their title, source
+page, or image URL. This rejects unrelated ads and stale cards before download.
+Each downloaded image also gets an adjacent `.json` manifest containing its
+query, source engine, original image URL, source page, title, and timestamp so
+editorial provenance can be checked before use.
 
 ## Installation
 
