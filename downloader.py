@@ -51,7 +51,20 @@ class ImageDownloader:
         """Download high-resolution images using Google, then Bing if blocked."""
         driver = None
         downloaded_files: List[str] = []
-        total_attempts = 0
+        diagnostics = {
+            "google_status": "not-run",
+            "google_candidates": 0,
+            "bing_cards": 0,
+            "bing_candidates": 0,
+            "bing_rejected_invalid": 0,
+            "bing_rejected_duplicate": 0,
+            "bing_rejected_query": 0,
+            "attempts": 0,
+            "accepted": 0,
+            "rejected_too_small": 0,
+            "rejected_unsupported": 0,
+            "rejected_download": 0,
+        }
 
         try:
             logger.info("Starting download for query: %s", query)
@@ -65,11 +78,13 @@ class ImageDownloader:
                 image_type,
                 max(num_images * 8, 30),
             )
+            diagnostics["google_status"] = google_status
+            diagnostics["google_candidates"] = len(google_urls)
 
             if google_status != "ok":
                 logger.warning("Google Images unavailable (%s); using Bing fallback.", google_status)
 
-            downloaded_files, attempts = self._download_candidates(
+            downloaded_files, google_downloads = self._download_candidates(
                 google_urls,
                 query,
                 search_dir,
@@ -77,15 +92,16 @@ class ImageDownloader:
                 min_size_kb,
                 source="google",
             )
-            total_attempts += attempts
+            self._merge_download_diagnostics(diagnostics, google_downloads)
 
             if len(downloaded_files) < num_images:
-                bing_urls = self._bing_image_urls(
+                bing_urls, bing_diagnostics = self._bing_image_urls(
                     driver,
                     query,
                     max((num_images - len(downloaded_files)) * 10, 40),
                 )
-                fallback_files, attempts = self._download_candidates(
+                diagnostics.update(bing_diagnostics)
+                fallback_files, bing_downloads = self._download_candidates(
                     bing_urls,
                     query,
                     search_dir,
@@ -95,7 +111,9 @@ class ImageDownloader:
                     start_index=len(downloaded_files),
                 )
                 downloaded_files.extend(fallback_files)
-                total_attempts += attempts
+                self._merge_download_diagnostics(diagnostics, bing_downloads)
+
+            logger.info(self._diagnostics_line(diagnostics))
 
             if not downloaded_files:
                 return {
@@ -106,24 +124,29 @@ class ImageDownloader:
                     ),
                     "downloaded": 0,
                     "files": [],
-                    "attempts": total_attempts,
+                    "attempts": diagnostics["attempts"],
+                    "google_status": google_status,
+                    "diagnostics": diagnostics,
                 }
 
             return {
                 "status": "success",
                 "downloaded": len(downloaded_files),
                 "files": downloaded_files,
-                "attempts": total_attempts,
+                "attempts": diagnostics["attempts"],
                 "google_status": google_status,
+                "diagnostics": diagnostics,
             }
         except Exception as error:
             logger.exception("Error in download_images: %s", error)
+            logger.info(self._diagnostics_line(diagnostics))
             return {
                 "status": "error",
                 "error": str(error),
                 "downloaded": len(downloaded_files),
                 "files": downloaded_files,
-                "attempts": total_attempts,
+                "attempts": diagnostics["attempts"],
+                "diagnostics": diagnostics,
             }
         finally:
             if driver:
@@ -192,7 +215,12 @@ class ImageDownloader:
 
         return urls, "ok" if urls else "zero-results"
 
-    def _bing_image_urls(self, driver, query: str, limit: int) -> List[Dict[str, str]]:
+    def _bing_image_urls(
+        self,
+        driver,
+        query: str,
+        limit: int,
+    ) -> tuple[List[Dict[str, str]], Dict[str, int]]:
         driver.get(
             "https://www.bing.com/images/search?"
             + urllib.parse.urlencode({"q": query, "form": "HDRSC2"})
@@ -202,32 +230,49 @@ class ImageDownloader:
         candidates: List[Dict[str, str]] = []
         seen = set()
         scrolls = 0
+        diagnostics = {
+            "bing_cards": 0,
+            "bing_candidates": 0,
+            "bing_rejected_invalid": 0,
+            "bing_rejected_duplicate": 0,
+            "bing_rejected_query": 0,
+        }
 
         while len(candidates) < limit and scrolls < 8:
             for anchor in driver.find_elements("css selector", "a.iusc"):
+                diagnostics["bing_cards"] += 1
                 raw = anchor.get_attribute("m")
                 if not raw:
+                    diagnostics["bing_rejected_invalid"] += 1
                     continue
 
                 try:
                     metadata = json.loads(html.unescape(raw))
                 except (TypeError, json.JSONDecodeError):
+                    diagnostics["bing_rejected_invalid"] += 1
                     continue
 
                 url = metadata.get("murl")
-                if (
-                    self._is_remote_image_url(url)
-                    and url not in seen
-                    and self._candidate_matches_query(metadata, query)
-                ):
-                    seen.add(url)
-                    candidates.append(
-                        {
-                            "url": url,
-                            "title": str(metadata.get("t") or ""),
-                            "source_page": str(metadata.get("purl") or ""),
-                        }
-                    )
+                if not self._is_remote_image_url(url):
+                    diagnostics["bing_rejected_invalid"] += 1
+                    continue
+
+                if url in seen:
+                    diagnostics["bing_rejected_duplicate"] += 1
+                    continue
+
+                if not self._candidate_matches_query(metadata, query):
+                    diagnostics["bing_rejected_query"] += 1
+                    continue
+
+                seen.add(url)
+                candidates.append(
+                    {
+                        "url": url,
+                        "title": str(metadata.get("t") or ""),
+                        "source_page": str(metadata.get("purl") or ""),
+                    }
+                )
 
                 if len(candidates) >= limit:
                     break
@@ -239,7 +284,9 @@ class ImageDownloader:
             time.sleep(1)
             scrolls += 1
 
-        return candidates
+        diagnostics["bing_candidates"] = len(candidates)
+
+        return candidates, diagnostics
 
     def _download_candidates(
         self,
@@ -250,9 +297,15 @@ class ImageDownloader:
         min_size_kb: int,
         source: str,
         start_index: int = 0,
-    ) -> tuple[List[str], int]:
+    ) -> tuple[List[str], Dict[str, int]]:
         files: List[str] = []
-        attempts = 0
+        diagnostics = {
+            "attempts": 0,
+            "accepted": 0,
+            "rejected_too_small": 0,
+            "rejected_unsupported": 0,
+            "rejected_download": 0,
+        }
         min_size_bytes = min_size_kb * 1024
 
         for candidate in urls:
@@ -264,7 +317,7 @@ class ImageDownloader:
             if not isinstance(url, str):
                 continue
 
-            attempts += 1
+            diagnostics["attempts"] += 1
 
             try:
                 with self._safe_file_operation() as temp_file:
@@ -288,10 +341,12 @@ class ImageDownloader:
                         content_type = response.headers.get_content_type()
 
                     if len(data) < min_size_bytes:
+                        diagnostics["rejected_too_small"] += 1
                         continue
 
                     extension = self._image_extension(content_type, data)
                     if extension is None:
+                        diagnostics["rejected_unsupported"] += 1
                         continue
 
                     with open(temp_file, "wb") as output:
@@ -318,6 +373,7 @@ class ImageDownloader:
                             indent=2,
                         )
                     files.append(path)
+                    diagnostics["accepted"] += 1
                     logger.info(
                         "Downloaded image %s/%s from %s: %s",
                         number,
@@ -326,9 +382,42 @@ class ImageDownloader:
                         filename,
                     )
             except Exception as error:
+                diagnostics["rejected_download"] += 1
                 logger.debug("Candidate download failed (%s): %s", url, error)
 
-        return files, attempts
+        return files, diagnostics
+
+    @staticmethod
+    def _merge_download_diagnostics(total: Dict, update: Dict[str, int]) -> None:
+        for key in (
+            "attempts",
+            "accepted",
+            "rejected_too_small",
+            "rejected_unsupported",
+            "rejected_download",
+        ):
+            total[key] += update.get(key, 0)
+
+    @staticmethod
+    def _diagnostics_line(diagnostics: Dict) -> str:
+        ordered = (
+            "google_status",
+            "google_candidates",
+            "bing_cards",
+            "bing_candidates",
+            "bing_rejected_invalid",
+            "bing_rejected_duplicate",
+            "bing_rejected_query",
+            "attempts",
+            "accepted",
+            "rejected_too_small",
+            "rejected_unsupported",
+            "rejected_download",
+        )
+
+        return "SEARCH_DIAGNOSTICS " + " ".join(
+            f"{key}={diagnostics.get(key, 0)}" for key in ordered
+        )
 
     @staticmethod
     def _is_remote_image_url(url: Optional[str]) -> bool:

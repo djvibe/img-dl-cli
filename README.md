@@ -27,6 +27,12 @@ Each downloaded image also gets an adjacent `.json` manifest containing its
 query, source engine, original image URL, source page, title, and timestamp so
 editorial provenance can be checked before use.
 
+Every run emits one `SEARCH_DIAGNOSTICS` line with the Google outcome, Bing
+card/candidate counts, download attempts, accepted files, and rejection counts
+for undersized, unsupported, or failed downloads. This distinguishes a Google
+CAPTCHA from an empty Bing page, relevance filtering, the size gate, and remote
+download failures without attempting to bypass provider challenges.
+
 ## Installation
 
 1.  **Clone the repository:**
